@@ -1,0 +1,35 @@
+--- C:/CTSync/chirotouch_sync_v_04.19.26_BROKEN.py	2026-04-20 22:22:49.282664200 -0400
++++ C:/CTSync/chirotouch_sync.py	2026-04-20 22:25:36.756512500 -0400
+@@ -203,7 +203,13 @@
+     """
+     log.info("[RUNNING] Building patient lookup for Charge Log...")
+     lookup = {}
+-    for r in pat_tbl.all(fields=["fld4ogKYb3HOjcm4w"]):
++    # use_field_ids=True (pyairtable 3.x alias for returnFieldsByFieldId) so
++    # Airtable interprets "fld..." as IDs (not names) AND keys the returned
++    # dict by field ID. Without it, the API treats the string as a field NAME,
++    # matches nothing, and every record comes back with an empty fields dict —
++    # which is why the v_04.19.26 first run produced 0 entries against 429
++    # Patients rows.
++    for r in pat_tbl.all(fields=["fld4ogKYb3HOjcm4w"], use_field_ids=True):
+         ct_id = r["fields"].get("fld4ogKYb3HOjcm4w")
+         if ct_id is not None:
+             lookup[int(ct_id)] = r["id"]
+@@ -275,7 +281,7 @@
+     NEW in v_04.19.26 (aligned with Automation A design v_04.19.26.2):
+       - Modifier (fldl1R9Axu8oEU6P2): concatenated from ClaimLines.Modifier1..4
+       - Units    (fldwILSiViRe6PdjE): from ClaimLines.Units, defaults to 1
+-      - Linked Patient (fldbwgMmbakZPWCBv): Airtable record ID from patient_lookup
++      - Linked Patient (fldbwqMmbakZPWCBv): Airtable record ID from patient_lookup
+     """
+     ct_pid = int(row.ct_patient_id) if row.ct_patient_id else None
+ 
+@@ -329,7 +335,7 @@
+         "fldwILSiViRe6PdjE":  int(row.units) if row.units and row.units > 0 else 1,
+ 
+         # Linked Patient (multipleRecordLinks → Patients) — resolved via lookup; None if unresolved
+-        "fldbwgMmbakZPWCBv":  linked_patient,
++        "fldbwqMmbakZPWCBv":  linked_patient,
+ 
+         # ═══════════════════════
+ 
